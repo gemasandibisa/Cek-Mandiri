@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CEK JIMPITAN MANDIRI</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <style>
+        :root {
+            --bg-color: #f4f7fa;
+            --bg-gradient: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary-color: #10b981;
+            --banking-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --gold-accent: #b45309;
+            --danger-color: #ef4444; 
+            --card-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            --border-line: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Arial, sans-serif; }
+        body { background: var(--bg-color); background-image: var(--bg-gradient); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        .hidden { display: none !important; }
+        
+        .screen { width: 100%; max-width: 480px; min-height: 100vh; padding: 25px 16px 40px; }
+        
+        /* SPLASH SCREEN */
+        #splash-screen {
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 480px; height: 100vh;
+            background: radial-gradient(circle at center, #ffffff 0%, #eef2f7 100%);
+            z-index: 10000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 24px;
+            transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.6s;
+        }
+        #splash-screen.fade-out { opacity: 0; visibility: hidden; }
+        
+        .splash-content { text-align: center; animation: splashZoomIn 1s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+        .splash-logo {
+            width: 100px; height: 100px; background: var(--banking-gradient);
+            border-radius: 28px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 25px; border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15); position: relative; overflow: hidden;
+        }
+        .splash-logo::after {
+            content: ''; position: absolute; top: -50%; left: -60%; width: 30%; height: 200%;
+            background: rgba(245, 158, 11, 0.25); transform: rotate(30deg);
+            animation: shineEffect 3s ease-in-out infinite;
+        }
+        .splash-logo i { font-size: 3.8rem; color: #fbbf24; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        
+        .splash-title { font-size: 1.6rem; font-weight: 800; letter-spacing: 0.5px; color: #0f172a; margin-bottom: 4px; }
+        .splash-title span { color: var(--primary-color); }
+        .splash-subtitle { font-size: 0.85rem; font-weight: 700; color: #b45309; letter-spacing: 3px; text-transform: uppercase; opacity: 0.9; }
+        
+        .splash-footer { position: absolute; bottom: 40px; text-align: center; color: var(--text-muted); font-size: 0.8rem; letter-spacing: 0.5px; }
+        .splash-loader { width: 32px; height: 32px; border: 3px solid rgba(0,0,0,0.05); border-top-color: var(--primary-color); border-radius: 50%; margin: 0 auto 15px; animation: spin 0.8s linear infinite; }
+
+        @keyframes splashZoomIn { 0% { opacity: 0; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes shineEffect { 0% { left: -60%; } 15% { left: 140%; } 100% { left: 140%; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* HEADER */
+        .app-header { 
+            text-align: center; margin-bottom: 25px; padding: 20px 15px; background: #ffffff;
+            border-radius: 18px; box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03);
+            border: 1px solid var(--border-line); position: relative; overflow: hidden;
+        }
+        .app-header h1 { 
+            font-size: 1.55rem; font-weight: 850; letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #0f172a 30%, #1e293b 60%, #10b981 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .app-header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .app-header p i { color: #d97706; font-size: 1rem; }
+        
+        /* UI TOAST */
+        #ui-logger { 
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%); z-index: 9999; 
+            padding: 16px 20px; font-size: 1rem; font-weight: 700; width: 90%; max-width: 400px; 
+            border-radius: 14px; display: flex; align-items: center; gap: 12px; backdrop-filter: blur(15px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15); transition: all 0.4s ease; opacity: 0;
+        }
+        #ui-logger.toast-success { background: #ecfdf5; border: 2px solid var(--primary-color); color: #065f46; }
+        #ui-logger.toast-error { background: #fef2f2; border: 2px solid var(--danger-color); color: #991b1b; }
+        #ui-logger.toast-show { top: 25px; opacity: 1; }
+
+        .form-card { padding: 24px 20px; background: var(--panel-bg); border-radius: 20px; border: 1px solid var(--border-line); box-shadow: var(--card-shadow); }
+        .form-card h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; color: #0f172a; }
+        .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 18px; line-height: 1.4; }
+        
+        .input-field { width: 100%; padding: 18px; margin: 10px 0; border-radius: 14px; border: 2px solid #cbd5e1; background: #f8fafc; color: var(--text-main); font-size: 1.15rem; font-weight: 700; outline: none; transition: all 0.3s; }
+        .input-field:focus { border-color: #0f172a; background: #ffffff; }
+        
+        button { cursor: pointer; border: none; outline: none; font-weight: 700; transition: all 0.2s ease; user-select: none; }
+        .btn-primary { width: 100%; padding: 18px; border-radius: 14px; font-size: 1.1rem; color: #ffffff; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
+        .btn-primary:active { transform: scale(0.98); }
+        
+        .btn-back { width: 100%; padding: 16px; margin-top: 20px; border-radius: 14px; font-size: 1.05rem; color: #fff; background: var(--banking-gradient); box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        
+        .scanner-container { margin: 12px 0; border-radius: 14px; overflow: hidden; border: 2px dashed #94a3b8; background: #000; }
+        #reader-cek { width: 100%; }
+        .btn-scan { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 14px; font-size: 1.05rem; display: flex; align-items: center; justify-content: center; gap: 10px; color: #fff; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+
+        .status-item { padding: 22px; border-radius: 16px; background: var(--panel-bg); border: 1px solid var(--border-line); box-shadow: var(--card-shadow); }
+        .status-lunas { border-left: 8px solid var(--primary-color); }
+        .status-nunggak { border-left: 8px solid var(--danger-color); }
+        
+        .badge { padding: 6px 14px; border-radius: 8px; font-size: 1rem; font-weight: 800; letter-spacing: 0.5px; text-align: center; display: inline-block; }
+        .bg-lunas { background-color: #d1fae5; color: #065f46; }
+        .bg-nunggak { background-color: #fee2e2; color: #991b1b; }
+        
+        .history-title { font-size: 1.05rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin: 25px 0 10px; letter-spacing: 0.5px; }
+        .history-list { background: #f8fafc; border-radius: 16px; padding: 5px 18px; border: 1px solid var(--border-line); }
+        .history-list li { list-style: none; padding: 16px 0; border-bottom: 1px solid #e2e8f0; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center; color: #334155; }
+        .history-list li:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo"><i class='bx bxs-bank'></i></div>
+            <h1 class="splash-title">Cek <span>Jimpitan</span></h1>
+            <p class="splash-subtitle">Mandiri</p>
+        </div>
+        <div class="splash-footer">
+            <div class="splash-loader"></div>
+            <p>By KARANG TARUNA GEMASANDI</p>
+            <p style="font-size: 0.65rem; opacity: 0.5; margin-top: 4px;">v2.1.0 • Citizen Self Checking</p>
+        </div>
+    </div>
+
+    <div id="ui-logger" class="hidden"></div>
+
+    <section class="screen">
+        <header class="app-header">
+            <h1>CEK JIMPITAN MANDIRI</h1>
+            <p><i class='bx bxs-shield-quarter'></i> Keamanan & Saving Warga</p>
+        </header>
+
+        <main>
+            <div id="panel-pencarian" class="form-card">
+                <h3>Cek Status Saldo Anda</h3>
+                <p class="subtitle">Gunakan tombol kamera di bawah untuk scan kartu warga, atau ketik nama Anda langsung di kotak pencarian.</p>
+                
+                <button id="btn-toggle-scan-cek" class="btn-scan">
+                    <i class='bx bx-camera' style="font-size: 1.4rem;"></i> <span>Buka Kamera Scan Kartu</span>
+                </button>
+                
+                <div id="scanner-wrapper-cek" class="scanner-container hidden">
+                    <div id="reader-cek"></div>
+                </div>
+
+                <input type="text" id="search-warga" class="input-field" placeholder="Ketik Nama Anda di Sini...">
+                
+                <button id="btn-search-warga" class="btn-primary" style="margin-top: 10px;">
+                    <i class='bx bx-search-alt' style="font-size: 1.3rem; vertical-align: middle; margin-right: 5px;"></i> CARI DATA JIMPITAN
+                </button>
+            </div>
+
+            <div id="container-hasil" class="hidden">
+                <div id="status-result"></div>
+                <button id="btn-kembali-cari" class="btn-back">
+                    <i class='bx bx-left-arrow-alt' style="font-size: 1.4rem;"></i> KEMBALI CARI NAMA
+                </button>
+            </div>
+        </main>
+    </section>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://levjigmyjotdbkzbnjqn.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldmppZ215am90ZGJremJuanFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjI2ODIsImV4cCI6MjA5Nzc5ODY4Mn0.WJ15sTRRFnV645LpFxWCBKbuyeUsajtOJTC-hAVNTcw'; 
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const TIMEOUT_MS = 8000;
+        const withTimeout = (promise) => Promise.race([
+            promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Koneksi lambat. Silakan coba lagi.')), TIMEOUT_MS))
+        ]);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                if (splash) {
+                    splash.classList.add('fade-out');
+                    setTimeout(() => splash.remove(), 600);
+                }
+            }, 2500);
+        });
+
+        let toastTimeout, hideTimeout;
+        const logToScreen = (message, isError = false) => {
+            const logger = document.getElementById('ui-logger');
+            if(!logger) return;
+            clearTimeout(toastTimeout); clearTimeout(hideTimeout);
+            
+            logger.innerHTML = `<i class='bx ${isError ? 'bx-error-circle':'bx-check-circle'}' style='font-size: 1.5rem;'></i><div>${message}</div>`;
+            logger.className = isError ? 'toast-error' : 'toast-success';
+            
+            logger.classList.remove('hidden');
+            setTimeout(() => logger.classList.add('toast-show'), 50);
+            toastTimeout = setTimeout(() => {
+                logger.classList.remove('toast-show');
+                hideTimeout = setTimeout(() => logger.classList.add('hidden'), 400);
+            }, 4000);
+        };
+
+        let html5QrcodeScannerCek = null;
+
+        const toggleCekScanner = () => {
+            const wrapper = document.getElementById('scanner-wrapper-cek');
+            const btn = document.getElementById('btn-toggle-scan-cek');
+            
+            if (wrapper.classList.contains('hidden')) {
+                wrapper.classList.remove('hidden');
+                btn.innerHTML = "<i class='bx bx-camera-off' style='font-size:1.4rem;'></i> <span>Tutup Kamera</span>";
+                btn.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+                
+                html5QrcodeScannerCek = new Html5Qrcode("reader-cek");
+                html5QrcodeScannerCek.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 260, height: 260 } },
+                    (decodedText) => {
+                        document.getElementById('search-warga').value = decodedText.trim();
+                        logToScreen("Kartu Berhasil Dibaca!");
+                        stopCekScanner();
+                        handleCariWargaMendiri();
+                    },
+                    (err) => {}
+                ).catch(err => {
+                    logToScreen("Gagal membuka kamera HP.", true);
+                    stopCekScanner();
+                });
+            } else {
+                stopCekScanner();
+            }
+        };
+
+        const stopCekScanner = () => {
+            const wrapper = document.getElementById('scanner-wrapper-cek');
+            const btn = document.getElementById('btn-toggle-scan-cek');
+            if(btn) {
+                btn.innerHTML = "<i class='bx bx-camera' style='font-size:1.4rem;'></i> <span>Buka Kamera Scan Kartu</span>";
+                btn.style.background = "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)";
+            }
+            if(wrapper) wrapper.classList.add('hidden');
+            
+            if (html5QrcodeScannerCek) {
+                html5QrcodeScannerCek.stop().then(() => {
+                    html5QrcodeScannerCek = null;
+                }).catch(err => console.error(err));
+            }
+        };
+
+        // INTEGRASI & SINKRONISASI MUTASI DATA DARI M-JIMPITAN
+        const handleCariWargaMendiri = async () => {
+            const keyword = document.getElementById('search-warga').value.trim();
+            const panelPencarian = document.getElementById('panel-pencarian');
+            const containerHasil = document.getElementById('container-hasil');
+            const resultContainer = document.getElementById('status-result');
+            
+            if(!keyword) return logToScreen('Tolong masukkan atau ketik nama Anda terlebih dahulu!', true);
+            
+            stopCekScanner();
+            
+            panelPencarian.classList.add('hidden');
+            containerHasil.classList.remove('hidden');
+            resultContainer.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 40px 25px; font-size:1.1rem;"><i class=\'bx bx-loader-alt bx-spin\'></i> Menyelaraskan dengan database M-Jimpitan...</p>';
+            
+            try {
+                // Menggunakan ILIKE agar pencarian nama fleksibel huruf besar/kecil
+                const { data: rekapData, error: rekapError } = await withTimeout(
+                    supabase.from('rekap_jimpitan').select('*').ilike('nama', `%${keyword}%`)
+                );
+                
+                if (rekapError) throw rekapError;
+                
+                if(!rekapData || rekapData.length === 0) {
+                    logToScreen('Nama tidak ditemukan! Periksa kecocokan data RT.', true);
+                    resultContainer.innerHTML = '<p style="text-align:center; color:var(--danger-color); padding: 40px 25px; font-size:1.1rem; font-weight:700;"><i class="bx bx-info-circle"></i> Nama tidak terdaftar.<br><span style="font-size:0.95rem; font-weight:normal; color:var(--text-muted); display:block; margin-top:8px;">Pastikan ejaan nama sesuai dengan data yang diinput pada M-Jimpitan.</span></p>';
+                    return;
+                }
+
+                const wargaInfo = rekapData[0];
+                const isLunas = wargaInfo.status?.toUpperCase() === 'LUNAS';
+
+                // Sinkronisasi data riwayat transaksi realtime dari tabel mutasi M-Jimpitan
+                const { data: mutasiData, error: mutasiError } = await withTimeout(
+                    supabase.from('mutasi')
+                            .select('tanggal, nominal')
+                            .eq('warga_id', wargaInfo.warga_id)
+                            .order('tanggal', { ascending: false }) // Diurutkan berdasarkan input terbaru petugas
+                            .limit(5)
+                );
+
+                if (mutasiError) throw mutasiError;
+
+                resultContainer.innerHTML = '';
+                const divStatus = document.createElement('div');
+                divStatus.className = `status-item ${isLunas ? 'status-lunas' : 'status-nunggak'}`;
+                
+                // Set default nominal jika kolom database kosong (mencegah NaN)
+                const saldoAkhir = wargaInfo.saldo_akhir || 0;
+                const hariMenunggak = wargaInfo.hari_menunggak || 0;
+
+                divStatus.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-line); padding-bottom:10px;">
+                        <strong style="font-size: 1.4rem; color: #0f172a;">${wargaInfo.nama}</strong>
+                        <span class="badge ${isLunas ? 'bg-lunas' : 'bg-nunggak'}">${wargaInfo.status || 'BELUM BAYAR'}</span>
+                    </div>
+                    <div style="font-size: 1.1rem; color: var(--text-muted); line-height: 1.8;">
+                        <p>Total Tabungan / Saldo Anda:</p>
+                        <h2 style="color:#d97706; font-weight:800; font-size:2rem; margin: 4px 0 10px;">Rp ${saldoAkhir.toLocaleString('id-ID')}</h2>
+                        
+                        ${!isLunas 
+                            ? `<div style="background:#fef2f2; border: 1px solid #fca5a5; padding:12px; border-radius:10px; color:var(--danger-color); font-weight:800;"><i class='bx bx-error-circle' style='vertical-align:middle; font-size:1.3rem;'></i> Menunggak: ${hariMenunggak} Hari</div>` 
+                            : `<div style="background:#ecfdf5; border: 1px solid #6ee7b7; padding:12px; border-radius:10px; color:var(--primary-color); font-weight:800;"><i class='bx bx-check-circle' style='vertical-align:middle; font-size:1.3rem;'></i> Pembayaran Jimpitan Lancar</div>`
+                        }
+                    </div>
+                `;
+                resultContainer.appendChild(divStatus);
+
+                const historyTitle = document.createElement('h4');
+                historyTitle.className = 'history-title';
+                historyTitle.textContent = '5 Setoran Terakhir (M-Jimpitan):';
+                resultContainer.appendChild(historyTitle);
+
+                const ulHistory = document.createElement('ul');
+                ulHistory.className = 'history-list';
+
+                if(!mutasiData || mutasiData.length === 0) {
+                    ulHistory.innerHTML = '<li style="color: var(--text-muted); justify-content:center; font-size:1rem; padding: 12px 0;">Belum ada catatan setoran masuk dari petugas</li>';
+                } else {
+                    mutasiData.forEach(trx => {
+                        const dateObj = new Date(trx.tanggal);
+                        const tglFormat = !isNaN(dateObj) ? dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '---';
+                        const jamFormat = !isNaN(dateObj) ? dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':') : '';
+                        const nominalTrx = trx.nominal || 0;
+                        
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <div>
+                                <strong style="color:#059669; font-size:1.15rem;">+ Rp ${nominalTrx.toLocaleString('id-ID')}</strong>
+                            </div>
+                            <span style="font-size:0.95rem; color: var(--text-muted); font-weight:600;">${tglFormat} ${jamFormat} WIB</span>
+                        `;
+                        ulHistory.appendChild(li);
+                    });
+                }
+                resultContainer.appendChild(ulHistory);
+                logToScreen('Sinkronisasi data sukses!');
+
+            } catch (err) {
+                panelPencarian.classList.remove('hidden');
+                containerHasil.classList.add('hidden');
+                logToScreen('Gagal memuat data dari server M-Jimpitan.', true);
+                console.error(err);
+            }
+        };
+
+        const handleKembaliCari = () => {
+            document.getElementById('panel-pencarian').classList.remove('hidden');
+            document.getElementById('container-hasil').classList.add('hidden');
+            document.getElementById('search-warga').value = ''; 
+            document.getElementById('status-result').innerHTML = '';
+        };
+
+        document.getElementById('btn-toggle-scan-cek').addEventListener('click', toggleCekScanner);
+        document.getElementById('btn-search-warga').addEventListener('click', handleCariWargaMendiri);
+        document.getElementById('btn-kembali-cari').addEventListener('click', handleKembaliCari);
+        
+        document.getElementById('search-warga').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleCariWargaMendiri();
+        });
+    </script>
+</body>
+</html>
